@@ -4,7 +4,7 @@ Default Predict
 
 1. add the DefaultPredict extension.
 
-2. you can exclude fields like this:
+2. you can exclude fields like this 
 
 ```php
 private static $default_predict_exclude = [
@@ -12,7 +12,7 @@ private static $default_predict_exclude = [
 ];
 ```
 
-3. you can include many rels like this:
+3. you can include many rels like this: (YET TO BE IMPLEMENTED!)
 
 ```php
 private static $default_predict_include_many_rels = [
@@ -24,7 +24,7 @@ private static $default_predict_include_many_rels = [
 
 ```php
 
-protected function getDefaultPredictions() : array
+protected function getSpecificDefaultPredictions() : array
 {
     return [
         'MyField' => 'MyPrediction'

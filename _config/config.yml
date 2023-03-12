@@ -3,3 +3,7 @@ Name: default-predict
 After:
   - '#coreconfig'
 ---
+
+SilverStripe\ORM\DataObject:
+  default_predictor_limit: 5
+  default_predictor_threshold: 0.5

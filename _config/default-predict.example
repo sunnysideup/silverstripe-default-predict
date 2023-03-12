@@ -1,3 +1,13 @@
-#########################
-# DefaultPredict
-#########################
+---
+Name: default-predict-customisation
+After:
+  - '#coreconfig'
+---
+
+# use any DataObject here
+Page:
+  # must have
+  extensions:
+    - Sunnysideup\DefaultPredict\Extension\DefaultPredictExtension
+  default_predictor_limit: 5
+  default_predictor_threshold: 0.5
