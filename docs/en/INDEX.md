@@ -34,3 +34,6 @@ protected function getSpecificDefaultPredictions() : array
 
 ```
 This data will be merge with the standard predictions.
+
+
+5. also see: [default-predict.example](../../_config/default-predict.example). 

@@ -19,11 +19,12 @@ class DefaultPredictExtension extends DataExtension
         $className = $owner->ClassName;
 
         // work out limit and treshold
-        $limit = Config::inst()->get($className, 'default_predictor_limit');
-        $threshold = Config::inst()->get($className, 'default_predictor_threshold');
+        $limit = Config::inst()->get($className, 'default_predictor_limit') ?: 5;
+        $threshold = Config::inst()->get($className, 'default_predictor_threshold') ?: 0.5;
+        $recencyFactor = Config::inst()->get($className, 'default_predictor_recency_factor') ?: 1;
 
         // get predictions
-        $predicts = $this->getDefaultPredictionPredictor($limit, $threshold);
+        $predicts = $this->getDefaultPredictionPredictor($limit, $threshold, $recencyFactor);
 
         // get class specific predictions
         if ($owner->hasMethod('getSpecificDefaultPredictions')) {
@@ -36,7 +37,7 @@ class DefaultPredictExtension extends DataExtension
         }
     }
 
-    protected function getDefaultPredictionPredictor(int $limit, float $threshold): array
+    protected function getDefaultPredictionPredictor(int $limit, float $threshold, float $recencyFactor): array
     {
         // get basics
         $owner = $this->getOwner();
@@ -71,7 +72,7 @@ class DefaultPredictExtension extends DataExtension
                 // ignore empty ones
                 if ($object->$fieldName) {
                     // give more weight to the last one used.
-                    for ($y = 0; $y <= $pos; $y++) {
+                    for ($y = 0; $y <= $pos; $y += $recencyFactor) {
                         $valueArray[] = $object->$fieldName;
                     }
                 }
