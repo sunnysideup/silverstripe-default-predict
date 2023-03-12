@@ -12,6 +12,24 @@ use SilverStripe\ORM\DataObject;
 class DefaultPredictExtension extends DataExtension
 {
 
+    private static $base_default_predictor_limit = 5;
+
+    private static $base_default_predictor_threshold = 0.5;
+
+    /**
+     * the greater the number, the less recency matters.
+     * with a value of one, recency increases by 100% every step closer to the last record.
+     * i.e the last record has five times more chance to the influencer
+     * than the record that was created five steps ago.
+     */
+    private static $base_default_predictor_recency_factor =  1;
+
+    private static $base_default_predict_exclude = [
+        'ID',
+        'Created',
+        'LastEdited',
+    ];
+
     public function populateDefaults()
     {
         // get basics
@@ -19,9 +37,13 @@ class DefaultPredictExtension extends DataExtension
         $className = $owner->ClassName;
 
         // work out limit and treshold
-        $limit = Config::inst()->get($className, 'default_predictor_limit') ?: 5;
-        $threshold = Config::inst()->get($className, 'default_predictor_threshold') ?: 0.5;
-        $recencyFactor = Config::inst()->get($className, 'default_predictor_recency_factor') ?: 1;
+        $limit = Config::inst()->get($className, 'default_predictor_limit') ?:
+            Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_limit');
+        $threshold = Config::inst()->get($className, 'default_predictor_threshold') ?:
+            Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_threshold');
+
+        $recencyFactor = Config::inst()->get($className, 'default_predictor_recency_factor') ?:
+            Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_recency_factor');
 
         // get predictions
         $predicts = $this->getDefaultPredictionPredictor($limit, $threshold, $recencyFactor);

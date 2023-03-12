@@ -4,16 +4,3 @@ After:
   - '#coreconfig'
 ---
 
-SilverStripe\ORM\DataObject:
-  default_predictor_limit: 5
-  default_predictor_threshold: 0.5
-  #  the greater the number, the less recency matters.
-  # with a value of one, recency increases by 100% every step closer to the last record.
-  # i.e the last record has five times more chance to the influencer
-  # than the record that was created five steps ago.
-  default_predictor_recency_factor: 1
-  default_predict_exclude:
-    - ID
-    - Created
-    - LastEdited
-
