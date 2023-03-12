@@ -22,12 +22,13 @@ class DefaultPredictExtension extends DataExtension
      * i.e the last record has five times more chance to the influencer
      * than the record that was created five steps ago.
      */
-    private static $base_default_predictor_recency_factor =  1;
+    private static $base_default_predictor_recency_factor =  0.5;
 
     private static $base_default_predict_exclude = [
         'ID',
         'Created',
         'LastEdited',
+        'Version',
     ];
 
     public function populateDefaults()
@@ -39,6 +40,7 @@ class DefaultPredictExtension extends DataExtension
         // work out limit and treshold
         $limit = Config::inst()->get($className, 'default_predictor_limit') ?:
             Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_limit');
+
         $threshold = Config::inst()->get($className, 'default_predictor_threshold') ?:
             Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_threshold');
 
@@ -55,7 +57,7 @@ class DefaultPredictExtension extends DataExtension
 
         // set values
         foreach ($predicts as $fieldName => $value) {
-            $this->$fieldName = $value;
+            $owner->$fieldName = $value;
         }
     }
 
@@ -73,38 +75,46 @@ class DefaultPredictExtension extends DataExtension
             ->sort(['ID' => 'DESC'])
             ->exclude(['ID' => $owner->ID])
             ->limit($limit);
-
+        // print_r($objects->column('Purpose'));
+        // print_r($objects->column('Title'));
         //store objects in memory
         $objectArray = [];
         foreach ($objects as $object) {
             $objectArray[] = $object;
         }
         // put the latest one last so that we can give it more weight.
-        $objects = array_reverse($objects);
+        $objectArray = array_reverse($objectArray);
 
         // get the field names
         $fieldNames = $this->getDefaultPredictionFieldNames($className);
-
+        // print_r($fieldNames);
         // loop through fields
         foreach ($fieldNames as $fieldName) {
             $valueArray = [];
-
             // loop through objects
+            $max = 0;
             foreach ($objectArray as $pos => $object) {
-                // ignore empty ones
-                if ($object->$fieldName) {
-                    // give more weight to the last one used.
-                    for ($y = 0; $y <= $pos; $y += $recencyFactor) {
-                        $valueArray[] = $object->$fieldName;
-                    }
+                $value = $object->$fieldName;
+                if (!$value) {
+                    $value = '';
+                }
+                // give more weight to the last one used.
+                for ($y = 0; $y <= $max; $y++) {
+                    $valueArray[] = $value;
+                }
+                $max += $recencyFactor;
+            }
+            // print_r($fieldName);
+            // print_r($valueArray);
+            if (count($valueArray)) {
+                // work out if there is a value that comes back a lot, and, if so, add it to predicts
+                $possibleValue = $this->defaultPredictionPredictorBestContendor($valueArray, $threshold);
+                if ($possibleValue) {
+                    $predicts[$fieldName] = $possibleValue;
                 }
             }
-            // work out if there is a value that comes back a lot, and, if so, add it to predicts
-            $possibleValue = $this->defaultPredictionPredictorBestContendor($valueArray, $threshold);
-            if ($possibleValue !== null) {
-                $predicts[$fieldName] = $possibleValue;
-            }
         }
+        // print_r($predicts);
         return $predicts;
     }
 
@@ -112,10 +122,9 @@ class DefaultPredictExtension extends DataExtension
     protected function getDefaultPredictionFieldNames(string $className): array
     {
         // get exclusions
-        $exclude = Config::inst()->get($className, 'default_predict_exclude');
-        if (!is_array($exclude)) {
-            $exclude = [];
-        }
+        $excludeBase = (array) Config::inst()->get(DefaultPredictExtension::class, 'base_default_predict_exclude');
+        $excludeMore = (array) Config::inst()->get($className, 'default_predict_exclude');
+        $exclude = array_merge($excludeBase, $excludeMore);
 
         // get db and has_one fields
         $fieldsDb = array_keys(Config::inst()->get($className, 'db'));
