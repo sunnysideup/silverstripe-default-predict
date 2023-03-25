@@ -4,14 +4,12 @@ namespace Sunnysideup\DefaultPredict\Extension;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\ORM\DataExtension;
-use SilverStripe\ORM\DataObject;
 
 /**
  * adds meta tag functionality to the Page_Controller.
  */
 class DefaultPredictExtension extends DataExtension
 {
-
     private static $base_default_predictor_limit = 5;
 
     private static $base_default_predictor_threshold = 0.5;
@@ -22,7 +20,7 @@ class DefaultPredictExtension extends DataExtension
      * i.e the last record has five times more chance to the influencer
      * than the record that was created five steps ago.
      */
-    private static $base_default_predictor_recency_factor =  0.5;
+    private static $base_default_predictor_recency_factor = 0.5;
 
     private static $base_default_predict_exclude = [
         'ID',
@@ -33,7 +31,6 @@ class DefaultPredictExtension extends DataExtension
 
     public function populateDefaults()
     {
-        // get basics
         $owner = $this->getOwner();
         $className = $owner->ClassName;
 
@@ -47,7 +44,6 @@ class DefaultPredictExtension extends DataExtension
         $recencyFactor = Config::inst()->get($className, 'default_predictor_recency_factor') ?:
             Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_recency_factor');
 
-        // get predictions
         $predicts = $this->getDefaultPredictionPredictor($limit, $threshold, $recencyFactor);
 
         // get class specific predictions
@@ -55,15 +51,13 @@ class DefaultPredictExtension extends DataExtension
             $predicts = $predicts + $owner->getSpecificDefaultPredictions();
         }
 
-        // set values
         foreach ($predicts as $fieldName => $value) {
-            $owner->$fieldName = $value;
+            $owner->{$fieldName} = $value;
         }
     }
 
     protected function getDefaultPredictionPredictor(int $limit, float $threshold, float $recencyFactor): array
     {
-        // get basics
         $owner = $this->getOwner();
         $className = $owner->ClassName;
 
@@ -74,7 +68,8 @@ class DefaultPredictExtension extends DataExtension
         $objects = $className::get()
             ->sort(['ID' => 'DESC'])
             ->exclude(['ID' => $owner->ID])
-            ->limit($limit);
+            ->limit($limit)
+        ;
         // print_r($objects->column('Purpose'));
         // print_r($objects->column('Title'));
         //store objects in memory
@@ -94,12 +89,12 @@ class DefaultPredictExtension extends DataExtension
             // loop through objects
             $max = 0;
             foreach ($objectArray as $pos => $object) {
-                $value = $object->$fieldName;
-                if (!$value) {
+                $value = $object->{$fieldName};
+                if (! $value) {
                     $value = '';
                 }
                 // give more weight to the last one used.
-                for ($y = 0; $y <= $max; $y++) {
+                for ($y = 0; $y <= $max; ++$y) {
                     $valueArray[] = $value;
                 }
                 $max += $recencyFactor;
@@ -118,10 +113,8 @@ class DefaultPredictExtension extends DataExtension
         return $predicts;
     }
 
-
     protected function getDefaultPredictionFieldNames(string $className): array
     {
-        // get exclusions
         $excludeBase = (array) Config::inst()->get(DefaultPredictExtension::class, 'base_default_predict_exclude');
         $excludeMore = (array) Config::inst()->get($className, 'default_predict_exclude');
         $exclude = array_merge($excludeBase, $excludeMore);
@@ -150,16 +143,18 @@ class DefaultPredictExtension extends DataExtension
         foreach ($averages as $value => $percentage) {
             if ($percentage > $threshold) {
                 return $value;
-            } else {
-                return null;
             }
+
+            return null;
         }
+
         return null;
     }
 
     protected function defaultPredictionPredictorCalculateAverages(array $array)
     {
         $num = count($array); // provides the value for num
+
         return array_map(
             function ($val) use ($num) {
                 return $val / $num;
