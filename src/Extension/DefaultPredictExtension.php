@@ -7,6 +7,8 @@ use SilverStripe\ORM\DataExtension;
 
 /**
  * adds meta tag functionality to the Page_Controller.
+ *
+ * @property Site|DefaultPredictExtension $owner
  */
 class DefaultPredictExtension extends DataExtension
 {
