@@ -4,11 +4,12 @@ namespace Sunnysideup\DefaultPredict\Extension;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\ORM\DataExtension;
+use SilverStripe\ORM\DataObject;
 
 /**
- * adds meta tag functionality to the Page_Controller.
+ * adds meta tag functionality to the Page_Controller or another DataObject
  *
- * @property Site|DefaultPredictExtension $owner
+ * @property DataObject $owner
  */
 class DefaultPredictExtension extends DataExtension
 {
