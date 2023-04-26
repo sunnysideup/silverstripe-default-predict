@@ -9,7 +9,7 @@ use SilverStripe\ORM\DataObject;
 /**
  * adds meta tag functionality to the Page_Controller or another DataObject
  *
- * @property DataObject $owner
+ * @property Site|DefaultPredictExtension $owner
  */
 class DefaultPredictExtension extends DataExtension
 {
