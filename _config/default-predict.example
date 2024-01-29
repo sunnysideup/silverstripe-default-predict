@@ -13,3 +13,5 @@ Page:
   default_predictor_limit: 5 # use the last five records to predict
   default_predictor_threshold: 0.5 # minimum ratio of occurences to consider it
   default_predictor_recency_factor: 1 # how important is recency
+  fields_that_must_be_equal:
+    - MyField

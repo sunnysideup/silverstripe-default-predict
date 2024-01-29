@@ -32,6 +32,10 @@ class DefaultPredictExtension extends DataExtension
         'Version',
     ];
 
+    private static $fields_that_must_be_equal = [
+        'ClassName',
+    ];
+
     public function populateDefaults()
     {
         $owner = $this->getOwner();
@@ -47,7 +51,10 @@ class DefaultPredictExtension extends DataExtension
         $recencyFactor = Config::inst()->get($className, 'default_predictor_recency_factor') ?:
             Config::inst()->get(DefaultPredictExtension::class, 'base_default_predictor_recency_factor');
 
-        $predicts = $this->getDefaultPredictionPredictor($limit, $threshold, $recencyFactor);
+        $fieldsThatMustBeEqual = Config::inst()->get($className, 'fields_that_must_be_equal') ?:
+            Config::inst()->get(DefaultPredictExtension::class, 'fields_that_must_be_equal');
+
+        $predicts = $this->getDefaultPredictionPredictor($limit, $threshold, $recencyFactor, $fieldsThatMustBeEqual);
 
         // get class specific predictions
         if ($owner->hasMethod('getSpecificDefaultPredictions')) {
@@ -59,7 +66,7 @@ class DefaultPredictExtension extends DataExtension
         }
     }
 
-    protected function getDefaultPredictionPredictor(int $limit, float $threshold, float $recencyFactor): array
+    protected function getDefaultPredictionPredictor(int $limit, float $threshold, float $recencyFactor, array $fieldsThatMustBeEqual): array
     {
         $owner = $this->getOwner();
         $className = $owner->ClassName;
@@ -67,12 +74,25 @@ class DefaultPredictExtension extends DataExtension
         // set return variable
         $predicts = [];
 
+        // get field names
+        $fieldNames = $this->getDefaultPredictionFieldNames($className);
+
+        // must be equal
+        $mustBeEqual = [];
+        foreach($fieldsThatMustBeEqual as $fieldThatMustBeEqual) {
+            if(isset($fieldNames[$fieldThatMustBeEqual])) {
+                $mustBeEqual[$fieldThatMustBeEqual] = $owner->{$fieldThatMustBeEqual};
+            }
+        }
         // get last objects, based on limit;
         $objects = $className::get()
             ->sort(['ID' => 'DESC'])
             ->exclude(['ID' => $owner->ID])
             ->limit($limit)
         ;
+        if(count($mustBeEqual)) {
+            $objects = $objects->filter($mustBeEqual);
+        }
         // print_r($objects->column('Purpose'));
         // print_r($objects->column('Title'));
         //store objects in memory
@@ -84,14 +104,13 @@ class DefaultPredictExtension extends DataExtension
         $objectArray = array_reverse($objectArray);
 
         // get the field names
-        $fieldNames = $this->getDefaultPredictionFieldNames($className);
         // print_r($fieldNames);
         // loop through fields
         foreach ($fieldNames as $fieldName) {
             $valueArray = [];
             // loop through objects
             $max = 0;
-            foreach ($objectArray as $pos => $object) {
+            foreach ($objectArray as $object) {
                 $value = $object->{$fieldName};
                 if (! $value) {
                     $value = '';
@@ -106,7 +125,7 @@ class DefaultPredictExtension extends DataExtension
             // print_r($valueArray);
             if (count($valueArray)) {
                 // work out if there is a value that comes back a lot, and, if so, add it to predicts
-                $possibleValue = $this->defaultPredictionPredictorBestContendor($valueArray, $threshold);
+                $possibleValue = $this->defaultPredictionPredictorBestContender($valueArray, $threshold);
                 if ($possibleValue) {
                     $predicts[$fieldName] = $possibleValue;
                 }
@@ -138,7 +157,7 @@ class DefaultPredictExtension extends DataExtension
         );
     }
 
-    protected function defaultPredictionPredictorBestContendor(array $valueArray, float $threshold)
+    protected function defaultPredictionPredictorBestContender(array $valueArray, float $threshold)
     {
         $averages = $this->defaultPredictionPredictorCalculateAverages($valueArray);
         // sort by the most common one
