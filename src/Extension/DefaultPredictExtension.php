@@ -79,7 +79,7 @@ class DefaultPredictExtension extends Extension
         // must be equal
         $mustBeEqual = [];
         foreach($fieldsThatMustBeEqual as $fieldThatMustBeEqual) {
-            if(isset($fieldNames[$fieldThatMustBeEqual])) {
+            if(in_array($fieldThatMustBeEqual, $fieldNames, true)) {
                 $mustBeEqual[$fieldThatMustBeEqual] = $owner->{$fieldThatMustBeEqual};
             }
         }
