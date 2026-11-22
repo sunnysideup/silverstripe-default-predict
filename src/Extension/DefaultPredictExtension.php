@@ -35,7 +35,7 @@ class DefaultPredictExtension extends Extension
         'ClassName',
     ];
 
-    public function populateDefaults()
+    public function onAfterPopulateDefaults()
     {
         $owner = $this->getOwner();
         $className = $owner->ClassName;
