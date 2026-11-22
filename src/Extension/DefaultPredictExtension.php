@@ -2,16 +2,15 @@
 
 namespace Sunnysideup\DefaultPredict\Extension;
 
+use SilverStripe\Core\Extension;
 use SilverStripe\Core\Config\Config;
-use SilverStripe\ORM\DataExtension;
-use SilverStripe\ORM\DataObject;
 
 /**
  * adds meta tag functionality to the Page_Controller or another DataObject.
  *
  * @property Site|DefaultPredictExtension $owner
  */
-class DefaultPredictExtension extends DataExtension
+class DefaultPredictExtension extends Extension
 {
     private static $base_default_predictor_limit = 5;
 
@@ -58,7 +57,7 @@ class DefaultPredictExtension extends DataExtension
 
         // get class specific predictions
         if ($owner->hasMethod('getSpecificDefaultPredictions')) {
-            $predicts = $predicts + $owner->getSpecificDefaultPredictions();
+            $predicts += $owner->getSpecificDefaultPredictions();
         }
 
         foreach ($predicts as $fieldName => $value) {
@@ -84,6 +83,7 @@ class DefaultPredictExtension extends DataExtension
                 $mustBeEqual[$fieldThatMustBeEqual] = $owner->{$fieldThatMustBeEqual};
             }
         }
+
         // get last objects, based on limit;
         $objects = $className::get()
             ->sort(['ID' => 'DESC'])
@@ -93,6 +93,7 @@ class DefaultPredictExtension extends DataExtension
         if(count($mustBeEqual)) {
             $objects = $objects->filter($mustBeEqual);
         }
+
         // print_r($objects->column('Purpose'));
         // print_r($objects->column('Title'));
         //store objects in memory
@@ -100,6 +101,7 @@ class DefaultPredictExtension extends DataExtension
         foreach ($objects as $object) {
             $objectArray[] = $object;
         }
+
         // put the latest one last so that we can give it more weight.
         $objectArray = array_reverse($objectArray);
 
@@ -115,12 +117,15 @@ class DefaultPredictExtension extends DataExtension
                 if (! $value) {
                     $value = '';
                 }
+
                 // give more weight to the last one used.
                 for ($y = 0; $y <= $max; ++$y) {
                     $valueArray[] = $value;
                 }
+
                 $max += $recencyFactor;
             }
+
             // print_r($fieldName);
             // print_r($valueArray);
             if (count($valueArray)) {
@@ -131,6 +136,7 @@ class DefaultPredictExtension extends DataExtension
                 }
             }
         }
+
         // print_r($predicts);
         return $predicts;
     }
@@ -178,9 +184,7 @@ class DefaultPredictExtension extends DataExtension
         $num = count($array); // provides the value for num
 
         return array_map(
-            function ($val) use ($num) {
-                return $val / $num;
-            },
+            fn($val) => $val / $num,
             array_count_values($array) // provides the value for $val
         );
     }
